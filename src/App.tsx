@@ -87,6 +87,12 @@ export default function App() {
       setAlerts(aList);
       setIncidents(incList);
       setSummary(sum);
+
+      // Auto-focus the highest risk village for seamless GIS telemetry on load
+      if (vList && vList.length > 0) {
+        const highestRisk = [...vList].sort((a, b) => (b.susceptibility_base_score || 0) - (a.susceptibility_base_score || 0))[0];
+        setSelectedVillage(highestRisk || vList[0]);
+      }
     } catch (err) {
       console.error('Failed to load initial BEACON disaster data:', err);
     } finally {
@@ -350,6 +356,13 @@ export default function App() {
           } else {
             setCurrentTab('alerts');
           }
+        }}
+        onNavigateToTab={(tab, payload) => {
+          if (tab === 'map' && payload?.villageId) {
+            const v = villages.find(vil => vil.id === payload.villageId);
+            if (v) setSelectedVillage(v);
+          }
+          setCurrentTab(tab);
         }}
       />
 

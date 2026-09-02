@@ -390,6 +390,14 @@ export const RiskMap: React.FC<RiskMapProps> = ({
     showIncidents
   ]);
 
+  // Auto-select highest risk settlement if none selected
+  useEffect(() => {
+    if (!selectedVillage && villages.length > 0) {
+      const highestRisk = [...villages].sort((a, b) => (b.susceptibility_base_score || 0) - (a.susceptibility_base_score || 0))[0];
+      onSelectVillage(highestRisk || villages[0]);
+    }
+  }, [villages, selectedVillage, onSelectVillage]);
+
   // Fly to selected village when selected
   useEffect(() => {
     if (selectedVillage && mapInstanceRef.current) {

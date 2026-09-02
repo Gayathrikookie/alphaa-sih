@@ -72,6 +72,15 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
     return true;
   });
 
+  // Automatically keep activeAlertDetail populated when alerts load or change
+  React.useEffect(() => {
+    if (filteredAlerts.length > 0) {
+      if (!activeAlertDetail || !filteredAlerts.some(a => a.id === activeAlertDetail.id)) {
+        setActiveAlertDetail(filteredAlerts[0]);
+      }
+    }
+  }, [alerts, filteredAlerts, activeAlertDetail]);
+
   const showToast = (msg: string) => {
     setActionFeedback(msg);
     setTimeout(() => setActionFeedback(null), 4000);

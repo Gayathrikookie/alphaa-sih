@@ -14,10 +14,16 @@ import {
   Users,
   Compass,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  CheckCircle,
+  Activity,
+  AlertTriangle,
+  ArrowRight,
+  ExternalLink
 } from 'lucide-react';
 import { User, Role, Alert } from '../../types.ts';
 import { Language, translations } from '../../i18n/translations.ts';
+import { initialSystemNotifications, SystemNotification } from '../../data/notifications.ts';
 
 interface HeaderProps {
   user: User;
@@ -32,6 +38,7 @@ interface HeaderProps {
   onResetSimulation: () => void;
   isSimulating: boolean;
   onSelectAlert: (alert: Alert) => void;
+  onNavigateToTab?: (tab: 'dashboard' | 'map' | 'alerts' | 'incidents' | 'analytics' | 'routes' | 'report' | 'settings', payload?: any) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -46,16 +53,51 @@ export const Header: React.FC<HeaderProps> = ({
   onSimulateRain,
   onResetSimulation,
   isSimulating,
-  onSelectAlert
+  onSelectAlert,
+  onNavigateToTab
 }) => {
   const t = translations[activeLanguage] || translations.en;
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showAlertsDropdown, setShowAlertsDropdown] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [notifications, setNotifications] = useState<SystemNotification[]>(initialSystemNotifications);
+  const [activeNotifTab, setActiveNotifTab] = useState<'ALL' | 'CAP_ALERT' | 'IOT_TRIGGER' | 'FIELD_SITREP'>('ALL');
 
   const criticalAlerts = alerts.filter(a => a.severity === 'CRITICAL' && a.status === 'NEW');
-  const totalNewAlerts = alerts.filter(a => a.status === 'NEW').length;
+  const unreadCount = notifications.filter(n => !n.read).length + alerts.filter(a => a.status === 'NEW').length;
+
+  const filteredNotifications = notifications.filter(n => {
+    if (activeNotifTab === 'ALL') return true;
+    return n.category === activeNotifTab;
+  });
+
+  const markAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  const handleNotificationClick = (notif: SystemNotification) => {
+    setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
+    setShowAlertsDropdown(false);
+    if (notif.targetAlertId) {
+      const match = alerts.find(a => a.id === notif.targetAlertId);
+      if (match) {
+        onSelectAlert(match);
+        return;
+      }
+    }
+    if (notif.targetVillageId && onNavigateToTab) {
+      onNavigateToTab('map', { villageId: notif.targetVillageId });
+      return;
+    }
+    if (notif.targetIncidentId && onNavigateToTab) {
+      onNavigateToTab('incidents', { incidentId: notif.targetIncidentId });
+      return;
+    }
+    if (onNavigateToTab) {
+      onNavigateToTab('alerts');
+    }
+  };
 
   const roleLabels: Record<Role, { title: string; subtitle: string; org: string }> = {
     super_admin: { title: 'Super Administrator', subtitle: 'Joint Secretary (DRR Division)', org: 'MDoNER & NDMA' },
@@ -234,7 +276,7 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* Alerts Notification Bell */}
+          {/* Alerts & Operational SITREPs Notification Bell */}
           <div className="relative">
             <button
               onClick={() => {
@@ -243,50 +285,109 @@ export const Header: React.FC<HeaderProps> = ({
                 setShowLangMenu(false);
               }}
               className="relative p-2 text-slate-300 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 rounded-lg transition"
-              title="Early Warning Feed"
+              title="Operational SITREPs & Early Warning Feed"
             >
               <Bell className="w-4 h-4" />
-              {totalNewAlerts > 0 && (
+              {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-md animate-pulse">
-                  {totalNewAlerts}
+                  {unreadCount}
                 </span>
               )}
             </button>
             {showAlertsDropdown && (
-              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+              <div className="absolute right-0 mt-2 w-80 sm:w-[420px] bg-slate-850 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                {/* Header with Title and Mark Read */}
                 <div className="p-3 bg-slate-900 border-b border-slate-700 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Radio className="w-4 h-4 text-rose-400 animate-pulse" />
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">Early Warning Queue</span>
+                    <div>
+                      <span className="text-xs font-bold text-white uppercase tracking-wider block">Operational SITREP Feed</span>
+                      <span className="text-[10px] text-slate-400">Integrated SEOC & Sensor Telemetry Stream</span>
+                    </div>
                   </div>
-                  <span className="text-[11px] bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded border border-rose-500/30">
-                    {alerts.length} Total
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={markAllRead}
+                      className="text-[10px] text-cyan-400 hover:text-cyan-300 hover:underline"
+                    >
+                      Mark All Read
+                    </button>
+                    <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded border border-rose-500/30 font-bold">
+                      {unreadCount} New
+                    </span>
+                  </div>
                 </div>
-                <div className="max-h-72 overflow-y-auto divide-y divide-slate-700/60">
-                  {alerts.slice(0, 5).map((alt) => (
+
+                {/* Filter Tabs */}
+                <div className="flex items-center px-2 py-1.5 bg-slate-900/80 border-b border-slate-800 gap-1 text-[11px] overflow-x-auto">
+                  <button
+                    onClick={() => setActiveNotifTab('ALL')}
+                    className={`px-2 py-1 rounded-md transition whitespace-nowrap font-medium ${
+                      activeNotifTab === 'ALL' ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    All Feeds
+                  </button>
+                  <button
+                    onClick={() => setActiveNotifTab('CAP_ALERT')}
+                    className={`px-2 py-1 rounded-md transition whitespace-nowrap font-medium ${
+                      activeNotifTab === 'CAP_ALERT' ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    CAP Alerts
+                  </button>
+                  <button
+                    onClick={() => setActiveNotifTab('IOT_TRIGGER')}
+                    className={`px-2 py-1 rounded-md transition whitespace-nowrap font-medium ${
+                      activeNotifTab === 'IOT_TRIGGER' ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    IoT Telemetry
+                  </button>
+                  <button
+                    onClick={() => setActiveNotifTab('FIELD_SITREP')}
+                    className={`px-2 py-1 rounded-md transition whitespace-nowrap font-medium ${
+                      activeNotifTab === 'FIELD_SITREP' ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Field SITREPs
+                  </button>
+                </div>
+
+                {/* Notification Items List */}
+                <div className="max-h-80 overflow-y-auto divide-y divide-slate-800">
+                  {filteredNotifications.map((notif) => (
                     <div
-                      key={alt.id}
-                      onClick={() => {
-                        onSelectAlert(alt);
-                        setShowAlertsDropdown(false);
-                      }}
-                      className="p-3 hover:bg-slate-700/50 cursor-pointer transition flex flex-col gap-1 text-xs"
+                      key={notif.id}
+                      onClick={() => handleNotificationClick(notif)}
+                      className={`p-3 hover:bg-slate-800/80 cursor-pointer transition flex flex-col gap-1.5 ${
+                        !notif.read ? 'bg-slate-900/60 border-l-2 border-l-rose-500' : 'opacity-80'
+                      }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          alt.severity === 'CRITICAL' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
-                          alt.severity === 'HIGH' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
-                          'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                        }`}>
-                          {alt.severity}
-                        </span>
-                        <span className="text-[10px] text-slate-400">{alt.status}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                            notif.severity === 'CRITICAL' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
+                            notif.severity === 'HIGH' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
+                            notif.severity === 'MEDIUM' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                            'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                          }`}>
+                            {notif.category.replace('_', ' ')}
+                          </span>
+                          {!notif.read && (
+                            <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-ping"></span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-400">{notif.timestamp}</span>
                       </div>
-                      <p className="font-medium text-slate-200 leading-snug">{alt.title}</p>
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        📍 {alt.village_name}, {alt.district_name}
-                      </span>
+                      <p className="font-semibold text-slate-100 text-xs leading-snug">{notif.title}</p>
+                      <p className="text-[11px] text-slate-300 leading-relaxed line-clamp-2">{notif.message}</p>
+                      <div className="flex items-center justify-between pt-1 text-[10px] text-slate-400 border-t border-slate-800/60">
+                        <span>📡 {notif.source}</span>
+                        <span className="text-cyan-400 hover:text-cyan-300 flex items-center gap-0.5">
+                          Inspect <ArrowRight className="w-3 h-3" />
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>

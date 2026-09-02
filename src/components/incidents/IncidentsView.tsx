@@ -74,6 +74,15 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
     return true;
   });
 
+  // Automatically keep activeIncident populated when incidents load or change
+  React.useEffect(() => {
+    if (filteredIncidents.length > 0) {
+      if (!activeIncident || !filteredIncidents.some(inc => inc.id === activeIncident.id)) {
+        setActiveIncident(filteredIncidents[0]);
+      }
+    }
+  }, [incidents, filteredIncidents, activeIncident]);
+
   const handleStatusChange = (newStatus: IncidentReport['status']) => {
     if (activeIncident) {
       onUpdateIncidentStatus(activeIncident.id, newStatus, updateNote);
