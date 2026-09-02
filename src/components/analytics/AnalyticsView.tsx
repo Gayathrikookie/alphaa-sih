@@ -27,21 +27,27 @@ import {
   Printer
 } from 'lucide-react';
 import { Village, AnalyticsSummary, IncidentReport, Alert } from '../../types.ts';
+import {
+  defaultAnalyticsSummary,
+  defaultVillages,
+  defaultIncidents,
+  defaultAlerts
+} from '../../data/defaultData.ts';
 import { Language, translations } from '../../i18n/translations.ts';
 
 interface AnalyticsViewProps {
-  summary: AnalyticsSummary | null;
-  villages: Village[];
-  incidents: IncidentReport[];
-  alerts: Alert[];
+  summary?: AnalyticsSummary | null;
+  villages?: Village[];
+  incidents?: IncidentReport[];
+  alerts?: Alert[];
   activeLanguage: Language;
 }
 
 export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
-  summary,
-  villages,
-  incidents,
-  alerts,
+  summary = defaultAnalyticsSummary,
+  villages = defaultVillages,
+  incidents = defaultIncidents,
+  alerts = defaultAlerts,
   activeLanguage
 }) => {
   const t = translations[activeLanguage] || translations.en;
@@ -137,7 +143,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
             Cumulative 7-Day Precipitation
           </span>
           <p className="text-2xl font-bold text-white">
-            {summary?.monsoon_cumulative_7d_mm ?? 882.5} <span className="text-xs font-normal text-slate-400">mm avg across NER</span>
+            {summary?.rainfall_max_24h_mm ?? 215.0} <span className="text-xs font-normal text-slate-400">mm max recorded in 24h</span>
           </p>
           <span className="text-[10px] text-rose-400 font-medium">185% Above Normal Seasonal Average</span>
         </div>

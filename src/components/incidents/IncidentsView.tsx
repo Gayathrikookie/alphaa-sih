@@ -20,22 +20,27 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { IncidentReport, District, User as UserType } from '../../types.ts';
+import {
+  defaultIncidents,
+  defaultDistricts,
+  defaultUser
+} from '../../data/defaultData.ts';
 import { Language, translations } from '../../i18n/translations.ts';
 
 interface IncidentsViewProps {
-  incidents: IncidentReport[];
-  districts: District[];
-  user: UserType;
+  incidents?: IncidentReport[];
+  districts?: District[];
+  user?: UserType;
   activeLanguage: Language;
-  onUpdateIncidentStatus: (id: string, status: IncidentReport['status'], note?: string) => void;
+  onUpdateIncidentStatus?: (id: string, status: IncidentReport['status'], note?: string) => void;
   onNavigateToReport: () => void;
   onNavigateToMap: (villageId?: string) => void;
 }
 
 export const IncidentsView: React.FC<IncidentsViewProps> = ({
-  incidents,
-  districts,
-  user,
+  incidents = defaultIncidents,
+  districts = defaultDistricts,
+  user = defaultUser,
   activeLanguage,
   onUpdateIncidentStatus,
   onNavigateToReport,
@@ -85,7 +90,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
 
   const handleStatusChange = (newStatus: IncidentReport['status']) => {
     if (activeIncident) {
-      onUpdateIncidentStatus(activeIncident.id, newStatus, updateNote);
+      if (onUpdateIncidentStatus) onUpdateIncidentStatus(activeIncident.id, newStatus, updateNote);
       setActiveIncident({
         ...activeIncident,
         status: newStatus,

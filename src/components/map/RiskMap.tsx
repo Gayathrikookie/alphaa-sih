@@ -26,18 +26,27 @@ import {
   District,
   Block
 } from '../../types.ts';
+import {
+  defaultVillages,
+  defaultRoads,
+  defaultInfrastructure,
+  defaultSensors,
+  defaultIncidents,
+  defaultDistricts,
+  defaultBlocks
+} from '../../data/defaultData.ts';
 import { VillageDetailsDrawer } from './VillageDetailsDrawer.tsx';
 import { Language, translations } from '../../i18n/translations.ts';
 
 interface RiskMapProps {
-  villages: Village[];
-  roads: RoadSegment[];
-  infrastructure: InfrastructurePoint[];
-  sensors: Sensor[];
-  incidents: IncidentReport[];
-  alerts: Alert[];
-  districts: District[];
-  blocks: Block[];
+  villages?: Village[];
+  roads?: RoadSegment[];
+  infrastructure?: InfrastructurePoint[];
+  sensors?: Sensor[];
+  incidents?: IncidentReport[];
+  alerts?: Alert[];
+  districts?: District[];
+  blocks?: Block[];
   activeLanguage: Language;
   selectedVillage: Village | null;
   onSelectVillage: (village: Village | null) => void;
@@ -46,14 +55,14 @@ interface RiskMapProps {
 }
 
 export const RiskMap: React.FC<RiskMapProps> = ({
-  villages,
-  roads,
-  infrastructure,
-  sensors,
-  incidents,
-  alerts,
-  districts,
-  blocks,
+  villages = defaultVillages,
+  roads = defaultRoads,
+  infrastructure = defaultInfrastructure,
+  sensors = defaultSensors,
+  incidents = defaultIncidents,
+  alerts = [],
+  districts = defaultDistricts,
+  blocks = defaultBlocks,
   activeLanguage,
   selectedVillage,
   onSelectVillage,

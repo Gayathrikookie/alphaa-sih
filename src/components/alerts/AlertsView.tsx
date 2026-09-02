@@ -23,28 +23,31 @@ import {
   CloudRain
 } from 'lucide-react';
 import { Alert, District, User } from '../../types.ts';
+import {
+  defaultAlerts,
+  defaultDistricts,
+  defaultUser
+} from '../../data/defaultData.ts';
 import { Language, translations } from '../../i18n/translations.ts';
 
 interface AlertsViewProps {
-  alerts: Alert[];
-  districts: District[];
-  user: User;
+  alerts?: Alert[];
+  districts?: District[];
+  user?: User;
   activeLanguage: Language;
-  onAcknowledgeAlert: (alertId: string, note?: string) => void;
-  onNavigateToMap: (villageId?: string) => void;
+  onAcknowledgeAlert?: (alertId: string, note?: string) => void;
+  onNavigateToMap?: (villageId?: string) => void;
   onSimulateRain?: () => void;
   isSimulating?: boolean;
 }
 
 export const AlertsView: React.FC<AlertsViewProps> = ({
-  alerts,
-  districts,
-  user,
+  alerts = defaultAlerts,
+  districts = defaultDistricts,
+  user = defaultUser,
   activeLanguage,
   onAcknowledgeAlert,
-  onNavigateToMap,
-  onSimulateRain,
-  isSimulating = false
+  onNavigateToMap
 }) => {
   const t = translations[activeLanguage];
   const [selectedDistrict, setSelectedDistrict] = useState<string>('all');
@@ -88,7 +91,7 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
 
   const handleAcknowledge = () => {
     if (activeAlertDetail) {
-      onAcknowledgeAlert(activeAlertDetail.id, ackNote);
+      if (onAcknowledgeAlert) onAcknowledgeAlert(activeAlertDetail.id, ackNote);
       setActiveAlertDetail({
         ...activeAlertDetail,
         status: 'ACKNOWLEDGED',
@@ -223,17 +226,6 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          {onSimulateRain && (
-            <button
-              onClick={onSimulateRain}
-              disabled={isSimulating}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-semibold transition"
-            >
-              <CloudRain className="w-3.5 h-3.5 animate-bounce" />
-              <span>{isSimulating ? 'Simulating Surge...' : 'Simulate Cloudburst'}</span>
-            </button>
-          )}
-
           {/* Search Box */}
           <div className="relative flex-1 md:w-56">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />

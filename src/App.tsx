@@ -13,6 +13,18 @@ import {
   Role
 } from './types.ts';
 import { apiService } from './services/api.ts';
+import {
+  defaultVillages,
+  defaultDistricts,
+  defaultBlocks,
+  defaultRoads,
+  defaultInfrastructure,
+  defaultSensors,
+  defaultAlerts,
+  defaultIncidents,
+  defaultAnalyticsSummary,
+  defaultUser
+} from './data/defaultData.ts';
 import { Language } from './i18n/translations.ts';
 import { Header } from './components/common/Header.tsx';
 import { Sidebar, NavTab } from './components/common/Sidebar.tsx';
@@ -36,29 +48,20 @@ export default function App() {
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [simulationToast, setSimulationToast] = useState<string | null>(null);
 
-  // Dynamic User Persona (No hardcoded names!)
-  const [user, setUser] = useState<User>({
-    id: 'USR-001',
-    name: 'Disaster Duty Officer',
-    email: 'operations@mdoner.gov.in',
-    role: 'super_admin',
-    department: 'MDoNER & NDMA Disaster Risk Reduction Cell',
-    designation: 'Joint Secretary (DRR Division)',
-    phone: '+91 94361 88291',
-    avatar_initials: 'DO'
-  });
+  // Dynamic User Persona
+  const [user, setUser] = useState<User>(defaultUser);
 
-  // Data Store
-  const [villages, setVillages] = useState<Village[]>([]);
-  const [districts, setDistricts] = useState<District[]>([]);
-  const [blocks, setBlocks] = useState<Block[]>([]);
-  const [roads, setRoads] = useState<RoadSegment[]>([]);
-  const [infrastructure, setInfrastructure] = useState<InfrastructurePoint[]>([]);
-  const [sensors, setSensors] = useState<Sensor[]>([]);
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [incidents, setIncidents] = useState<IncidentReport[]>([]);
-  const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  // Data Store (Pre-loaded with default baseline data)
+  const [villages, setVillages] = useState<Village[]>(defaultVillages);
+  const [districts, setDistricts] = useState<District[]>(defaultDistricts);
+  const [blocks, setBlocks] = useState<Block[]>(defaultBlocks);
+  const [roads, setRoads] = useState<RoadSegment[]>(defaultRoads);
+  const [infrastructure, setInfrastructure] = useState<InfrastructurePoint[]>(defaultInfrastructure);
+  const [sensors, setSensors] = useState<Sensor[]>(defaultSensors);
+  const [alerts, setAlerts] = useState<Alert[]>(defaultAlerts);
+  const [incidents, setIncidents] = useState<IncidentReport[]>(defaultIncidents);
+  const [summary, setSummary] = useState<AnalyticsSummary | null>(defaultAnalyticsSummary);
+  const [loading, setLoading] = useState<boolean>(false);
 
   // Map & Drilldown Selection
   const [selectedVillage, setSelectedVillage] = useState<Village | null>(null);
@@ -235,37 +238,18 @@ export default function App() {
     }
   };
 
-  // Simulate Extreme Heavy Rain (SIH Demo)
-  const handleSimulateHeavyRain = async () => {
-    setIsSimulating(true);
-    setSimulationToast('⚠️ Injecting 24h Extreme Monsoon Precipitation (+140mm across Khasi & Jaintia Hills)...');
-    try {
-      const res = await apiService.simulateHeavyRain();
-      setVillages(res.villages);
-      setAlerts(res.alerts);
-      setSimulationToast('🚨 BEACON Critical Red Alerts Dispatched! Inclinometers triggered & Evacuation routes calculated.');
-      setTimeout(() => setSimulationToast(null), 6000);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSimulating(false);
-    }
+  // Reset Simulation to default baseline
+  const handleResetSimulation = () => {
+    setVillages(defaultVillages);
+    setAlerts(defaultAlerts);
+    setIncidents(defaultIncidents);
+    setSimulationToast('Baseline environmental conditions restored.');
+    setTimeout(() => setSimulationToast(null), 3000);
   };
 
-  // Reset Simulation
-  const handleResetSimulation = async () => {
-    setIsSimulating(true);
-    try {
-      const res = await apiService.resetSimulation();
-      setVillages(res.villages);
-      setAlerts(res.alerts);
-      setSimulationToast('Baseline environmental conditions restored.');
-      setTimeout(() => setSimulationToast(null), 3000);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSimulating(false);
-    }
+  const handleSimulateHeavyRain = () => {
+    setSimulationToast('Baseline monitoring active with standard parameters.');
+    setTimeout(() => setSimulationToast(null), 3000);
   };
 
   // Acknowledge alert

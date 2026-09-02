@@ -29,17 +29,26 @@ import {
   RoadSegment,
   RecentLandslide
 } from '../../types.ts';
+import {
+  defaultVillages,
+  defaultAlerts,
+  defaultIncidents,
+  defaultSensors,
+  defaultRoads,
+  defaultAnalyticsSummary,
+  defaultUser
+} from '../../data/defaultData.ts';
 import { Language, translations } from '../../i18n/translations.ts';
 
 interface DashboardViewProps {
-  summary: AnalyticsSummary | null;
-  alerts: Alert[];
-  incidents: IncidentReport[];
-  villages: Village[];
-  sensors: Sensor[];
-  roads: RoadSegment[];
+  summary?: AnalyticsSummary | null;
+  alerts?: Alert[];
+  incidents?: IncidentReport[];
+  villages?: Village[];
+  sensors?: Sensor[];
+  roads?: RoadSegment[];
   recentLandslides?: RecentLandslide[];
-  user: User;
+  user?: User;
   activeLanguage: Language;
   onNavigateToMap: () => void;
   onNavigateToAlerts: () => void;
@@ -47,20 +56,20 @@ interface DashboardViewProps {
   onNavigateToReport: () => void;
   onNavigateToSafeRoutes?: () => void;
   onSelectVillage: (village: Village) => void;
-  onAcknowledgeAlert: (alertId: string) => void;
-  onSimulateRain: () => void;
-  isSimulating: boolean;
+  onAcknowledgeAlert?: (alertId: string) => void;
+  onSimulateRain?: () => void;
+  isSimulating?: boolean;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
-  summary,
-  alerts,
-  incidents,
-  villages,
-  sensors,
-  roads,
+  summary = defaultAnalyticsSummary,
+  alerts = defaultAlerts,
+  incidents = defaultIncidents,
+  villages = defaultVillages,
+  sensors = defaultSensors,
+  roads = defaultRoads,
   recentLandslides = [],
-  user,
+  user = defaultUser,
   activeLanguage,
   onNavigateToMap,
   onNavigateToAlerts,
@@ -68,19 +77,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigateToReport,
   onNavigateToSafeRoutes,
   onSelectVillage,
-  onAcknowledgeAlert,
-  onSimulateRain,
-  isSimulating
+  onAcknowledgeAlert
 }) => {
   const t = translations[activeLanguage] || translations.en;
 
   const criticalVillages = villages.filter(v => v.current_rainfall_24h_mm > 140 || v.slope_deg > 45);
   const blockedRoads = roads.filter(r => r.status === 'BLOCKED');
-  const alertSensors = sensors.filter(s => s.last_reading.status === 'ALERT');
+  const alertSensors = sensors.filter(s => s.last_reading?.status === 'ALERT');
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto animate-in fade-in duration-300">
-      {/* Top Banner / SIH Evaluator Quick Launcher */}
+      {/* Top Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-rose-950/40 to-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
@@ -99,15 +106,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-          <button
-            onClick={onSimulateRain}
-            disabled={isSimulating}
-            className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-rose-950/50 active:scale-95 disabled:opacity-50"
-            title="Simulate 24h heavy monsoon cloudburst across NER districts"
-          >
-            <CloudRain className="w-4 h-4 text-amber-200" />
-            <span>{isSimulating ? 'Simulating Cloudburst...' : 'Simulate 24h Extreme Rain'}</span>
-          </button>
           {onNavigateToSafeRoutes && (
             <button
               onClick={onNavigateToSafeRoutes}
