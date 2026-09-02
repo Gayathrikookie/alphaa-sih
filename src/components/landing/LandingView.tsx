@@ -76,7 +76,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <input
                 type="text"
-                placeholder="Type village name (e.g., Sohra, Nohkalikai, Mawsynram, Nongstoin, Haflong)..."
+                placeholder="Type village name (e.g., Sohra, Mawsynram, Laitkynsew, Nongstoin, Haflong)..."
                 value={searchVillage}
                 onChange={(e) => setSearchVillage(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-rose-500"

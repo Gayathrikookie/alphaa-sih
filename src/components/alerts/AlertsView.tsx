@@ -292,7 +292,7 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
           <div className="flex items-center justify-between text-xs text-slate-400 px-1">
             <span>Showing {filteredAlerts.length} Active Bulletins</span>
             <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Live Broadcast Stream
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span> Multi-Channel Broadcast Matrix
             </span>
           </div>
 

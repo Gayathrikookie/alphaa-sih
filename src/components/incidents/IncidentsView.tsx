@@ -203,7 +203,7 @@ export const IncidentsView: React.FC<IncidentsViewProps> = ({
         <div className="lg:col-span-5 space-y-3">
           <div className="flex items-center justify-between text-xs text-slate-400 px-1">
             <span>{filteredIncidents.length} Ground Reports Found</span>
-            <span>Live Field Sync</span>
+            <span>Field Observation Registry</span>
           </div>
 
           <div className="space-y-2.5 max-h-[720px] overflow-y-auto pr-1">

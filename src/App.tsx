@@ -87,12 +87,6 @@ export default function App() {
       setAlerts(aList);
       setIncidents(incList);
       setSummary(sum);
-
-      // Auto-focus the highest risk village for seamless GIS telemetry on load
-      if (vList && vList.length > 0) {
-        const highestRisk = [...vList].sort((a, b) => (b.susceptibility_base_score || 0) - (a.susceptibility_base_score || 0))[0];
-        setSelectedVillage(highestRisk || vList[0]);
-      }
     } catch (err) {
       console.error('Failed to load initial BEACON disaster data:', err);
     } finally {

@@ -302,7 +302,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <Radio className="w-4 h-4 text-rose-400 animate-pulse" />
                     <div>
                       <span className="text-xs font-bold text-white uppercase tracking-wider block">Operational SITREP Feed</span>
-                      <span className="text-[10px] text-slate-400">Integrated SEOC & Sensor Telemetry Stream</span>
+                      <span className="text-[10px] text-slate-400">Integrated SEOC & Geological Telemetry Log</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

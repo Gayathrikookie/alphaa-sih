@@ -44,11 +44,21 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   alerts,
   activeLanguage
 }) => {
-  const t = translations[activeLanguage];
+  const t = translations[activeLanguage] || translations.en;
   const [reportGenerated, setReportGenerated] = useState<boolean>(false);
+  const [activeAnalysisScope, setActiveAnalysisScope] = useState<'REGIONAL' | 'DISTRICT' | 'GEOTECHNICAL'>('REGIONAL');
 
-  // Recharts Data Prep
-  const rainfallRiskData = villages.map(v => ({
+  // Settlement-wise Rainfall and Susceptibility Correlation Data
+  const rainfallRiskData = (villages && villages.length > 0 ? villages : [
+    { name: 'Sohra', current_rainfall_24h_mm: 186.4, slope_deg: 46.5, soil_moisture_pct: 92.5, susceptibility_base_score: 0.85, tilt_rate_deg_day: 0.38 },
+    { name: 'Mawsynram', current_rainfall_24h_mm: 215.0, slope_deg: 41.2, soil_moisture_pct: 96.1, susceptibility_base_score: 0.88, tilt_rate_deg_day: 0.38 },
+    { name: 'Laitkynsew', current_rainfall_24h_mm: 148.0, slope_deg: 44.0, soil_moisture_pct: 86.4, susceptibility_base_score: 0.76, tilt_rate_deg_day: 0.28 },
+    { name: 'Nongpoh', current_rainfall_24h_mm: 92.0, slope_deg: 26.5, soil_moisture_pct: 68.0, susceptibility_base_score: 0.48, tilt_rate_deg_day: 0.08 },
+    { name: 'Nongstoin', current_rainfall_24h_mm: 114.5, slope_deg: 32.0, soil_moisture_pct: 74.2, susceptibility_base_score: 0.58, tilt_rate_deg_day: 0.12 },
+    { name: 'Haflong', current_rainfall_24h_mm: 162.0, slope_deg: 48.0, soil_moisture_pct: 89.5, susceptibility_base_score: 0.82, tilt_rate_deg_day: 0.34 },
+    { name: 'Champhai', current_rainfall_24h_mm: 88.0, slope_deg: 36.5, soil_moisture_pct: 62.0, susceptibility_base_score: 0.52, tilt_rate_deg_day: 0.09 },
+    { name: 'Kurung Kumey', current_rainfall_24h_mm: 135.0, slope_deg: 45.0, soil_moisture_pct: 81.0, susceptibility_base_score: 0.72, tilt_rate_deg_day: 0.22 }
+  ]).map(v => ({
     name: v.name.split(' ')[0],
     rainfall: v.current_rainfall_24h_mm,
     slope: v.slope_deg,
@@ -57,26 +67,34 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       0.35 * Math.min(1, v.current_rainfall_24h_mm / 200) +
       0.25 * Math.min(1, v.slope_deg / 60) +
       0.20 * (v.soil_moisture_pct / 100) +
-      0.15 * v.susceptibility_base_score +
-      0.05 * Math.min(1, v.tilt_rate_deg_day / 0.5)
+      0.15 * (v.susceptibility_base_score || 0.7) +
+      0.05 * Math.min(1, (v.tilt_rate_deg_day || 0.2) / 0.5)
     ).toFixed(2)) * 100
   }));
 
   const riskPieData = [
-    { name: 'Critical (>78)', value: villages.filter(v => v.current_rainfall_24h_mm > 150 || v.slope_deg > 45).length, color: '#ef4444' },
-    { name: 'High (58-78)', value: 2, color: '#f97316' },
-    { name: 'Moderate (35-58)', value: 2, color: '#eab308' },
-    { name: 'Low (<35)', value: Math.max(1, villages.length - 6), color: '#22c55e' }
+    { name: 'Critical Risk (>70%)', value: 3, color: '#ef4444' },
+    { name: 'Medium Risk (40-70%)', value: 5, color: '#f59e0b' },
+    { name: 'Low Risk (<40%)', value: 2, color: '#10b981' }
   ];
 
   const monsoonTrendData = [
-    { day: 'Day -6', rainfall: 45, incidents: 0 },
-    { day: 'Day -5', rainfall: 62, incidents: 1 },
-    { day: 'Day -4', rainfall: 90, incidents: 1 },
-    { day: 'Day -3', rainfall: 125, incidents: 2 },
-    { day: 'Day -2', rainfall: 160, incidents: 3 },
-    { day: 'Yesterday', rainfall: 185, incidents: 4 },
-    { day: 'Today (Live)', rainfall: 215, incidents: 5 }
+    { day: 'Day 1', rainfall: 45, incidents: 0, saturation: 58 },
+    { day: 'Day 2', rainfall: 62, incidents: 1, saturation: 64 },
+    { day: 'Day 3', rainfall: 90, incidents: 1, saturation: 72 },
+    { day: 'Day 4', rainfall: 125, incidents: 2, saturation: 81 },
+    { day: 'Day 5', rainfall: 160, incidents: 3, saturation: 88 },
+    { day: 'Day 6', rainfall: 185, incidents: 4, saturation: 93 },
+    { day: 'Day 7', rainfall: 215, incidents: 5, saturation: 96 }
+  ];
+
+  const districtComparisonData = [
+    { district: 'East Khasi Hills', avgRainfall: 182, highRiskVillages: 4, sensorAlerts: 3 },
+    { district: 'Dima Hasao', avgRainfall: 162, highRiskVillages: 2, sensorAlerts: 2 },
+    { district: 'Kurung Kumey', avgRainfall: 135, highRiskVillages: 2, sensorAlerts: 1 },
+    { district: 'West Khasi Hills', avgRainfall: 114, highRiskVillages: 1, sensorAlerts: 1 },
+    { district: 'Ri-Bhoi', avgRainfall: 92, highRiskVillages: 0, sensorAlerts: 0 },
+    { district: 'Champhai', avgRainfall: 88, highRiskVillages: 0, sensorAlerts: 0 }
   ];
 
   const handleDownloadSITREP = () => {
@@ -239,6 +257,37 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
               </PieChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      </div>
+
+      {/* Tertiary Row: District Risk & Sensor Alert Comparison */}
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <Activity className="w-4 h-4 text-cyan-400" />
+              Inter-District Rainfall Accumulation vs Triggered Sensor Count
+            </h2>
+            <p className="text-xs text-slate-400">Comparing regional district rainfall averages with early warning sensor threshold exceedances</p>
+          </div>
+        </div>
+
+        <div className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={districtComparisonData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+              <XAxis dataKey="district" stroke="#94a3b8" fontSize={11} />
+              <YAxis stroke="#94a3b8" fontSize={11} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', fontSize: '12px' }}
+                itemStyle={{ color: '#f8fafc' }}
+              />
+              <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
+              <Bar dataKey="avgRainfall" name="Avg 24h Rainfall (mm)" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="highRiskVillages" name="High Risk Settlements" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="sensorAlerts" name="Active IoT Alerts" fill="#ef4444" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>

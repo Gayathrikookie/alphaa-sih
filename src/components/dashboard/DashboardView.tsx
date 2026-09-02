@@ -142,7 +142,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="text-xs font-medium text-rose-400">/ {villages.length} monitored</span>
           </div>
           <div className="text-[11px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800/80">
-            <span>Critical: Sohra, Nohkalikai, Mawsynram</span>
+            <span>Critical: Sohra, Mawsynram, Laitkynsew</span>
             <button onClick={onNavigateToMap} className="text-rose-400 hover:underline flex items-center gap-0.5">
               Map <ArrowRight className="w-3 h-3" />
             </button>
@@ -329,13 +329,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center justify-between text-[11px] text-slate-400">
               <span className="flex items-center gap-1.5">
                 <Activity className="w-3.5 h-3.5 text-cyan-400" />
-                Live Inclinometers & Piezometers
+                Inclinometers & Piezometers
               </span>
               <span className="text-emerald-400 font-bold">{sensors.length} Active</span>
             </div>
             <div className="flex items-center gap-1.5 text-[10px] text-slate-400 bg-slate-950 p-2 rounded-lg border border-slate-800">
               <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-              <span>Sohra-Nohkalikai Slope 01: <b>0.45°/d</b> (Threshold Alert)</span>
+              <span>Sohra-Laitkynsew Slope 01: <b>0.28°/d</b> (Threshold Monitored)</span>
             </div>
           </div>
         </div>

@@ -42,11 +42,13 @@ export const VillageDetailsDrawer: React.FC<VillageDetailsDrawerProps> = ({
   if (!village) return null;
 
   const t = translations[activeLanguage];
-  const riskLevel = riskSnapshot?.risk_level || 'LOW';
+  const rawRiskLevel = riskSnapshot?.risk_level || 'LOW';
+  const displayLevel = rawRiskLevel === 'CRITICAL' ? 'CRITICAL' : rawRiskLevel === 'LOW' ? 'LOW' : 'MEDIUM';
 
-  const riskBadgeStyles = {
+  const riskBadgeStyles: Record<string, string> = {
     CRITICAL: 'bg-rose-500/20 text-rose-400 border-rose-500/40',
-    HIGH: 'bg-orange-500/20 text-orange-400 border-orange-500/40',
+    MEDIUM: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
+    HIGH: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
     MODERATE: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
     LOW: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
   };
@@ -59,10 +61,10 @@ export const VillageDetailsDrawer: React.FC<VillageDetailsDrawerProps> = ({
           <div className="flex items-center gap-2 mb-1">
             <span
               className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase border ${
-                riskBadgeStyles[riskLevel]
+                riskBadgeStyles[displayLevel] || riskBadgeStyles.LOW
               }`}
             >
-              {riskLevel} RISK • SCORE {(riskSnapshot?.risk_score ?? 0).toFixed(2)}
+              {displayLevel} RISK • SCORE {((riskSnapshot?.risk_score ?? 0) * 100).toFixed(0)}%
             </span>
             <span className="text-xs text-slate-400">Pop: {village.population.toLocaleString()}</span>
           </div>

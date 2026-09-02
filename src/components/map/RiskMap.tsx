@@ -79,11 +79,11 @@ export const RiskMap: React.FC<RiskMapProps> = ({
   const [showIncidents, setShowIncidents] = useState(true);
 
   // Compute live risk snapshot per village based on time horizon
+  // 3 distinct colors: Critical (Red), Medium (Amber/Yellow), Low (Green)
   const getRiskColor = (score: number) => {
-    if (score >= 0.78) return '#ef4444'; // CRITICAL
-    if (score >= 0.58) return '#f97316'; // HIGH
-    if (score >= 0.35) return '#eab308'; // MODERATE
-    return '#22c55e'; // LOW
+    if (score >= 0.70) return '#ef4444'; // CRITICAL - Red
+    if (score >= 0.40) return '#f59e0b'; // MEDIUM - Amber/Yellow
+    return '#10b981'; // LOW - Green
   };
 
   const computeSnapshot = (v: Village, horizonHours: number): RiskSnapshot => {
@@ -94,14 +94,14 @@ export const RiskMap: React.FC<RiskMapProps> = ({
       0.35 * Math.min(1, effRain / 200) +
       0.25 * Math.min(1, v.slope_deg / 60) +
       0.20 * (effMoist / 100) +
-      0.15 * v.susceptibility_base_score +
-      0.05 * Math.min(1, v.tilt_rate_deg_day / 0.5)
+      0.15 * (v.susceptibility_base_score || 0.6) +
+      0.05 * Math.min(1, (v.tilt_rate_deg_day || 0.1) / 0.5)
     ).toFixed(3));
 
     let risk_level: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL' = 'LOW';
-    if (score >= 0.78) risk_level = 'CRITICAL';
-    else if (score >= 0.58) risk_level = 'HIGH';
-    else if (score >= 0.35) risk_level = 'MODERATE';
+    if (score >= 0.70) risk_level = 'CRITICAL';
+    else if (score >= 0.40) risk_level = 'MODERATE'; // Medium
+    else risk_level = 'LOW';
 
     const factors: string[] = [];
     if (effRain >= 140) factors.push(`Heavy Rainfall: ${effRain.toFixed(1)} mm`);
@@ -221,41 +221,48 @@ export const RiskMap: React.FC<RiskMapProps> = ({
       filteredVillages.forEach(v => {
         const snap = computeSnapshot(v, selectedHorizon);
         const color = getRiskColor(snap.risk_score);
-        const radius = snap.risk_level === 'CRITICAL' ? 24 : snap.risk_level === 'HIGH' ? 18 : 14;
+        const displayLevel = snap.risk_score >= 0.70 ? 'CRITICAL' : snap.risk_score >= 0.40 ? 'MEDIUM' : 'LOW';
 
         // Outer Hazard Buffer (Influence Zone)
         const buffer = L.circle([v.lat, v.lon], {
-          radius: snap.risk_level === 'CRITICAL' ? 2400 : snap.risk_level === 'HIGH' ? 1600 : 900,
+          radius: displayLevel === 'CRITICAL' ? 2400 : displayLevel === 'MEDIUM' ? 1500 : 800,
           color,
           fillColor: color,
-          fillOpacity: snap.risk_level === 'CRITICAL' ? 0.28 : snap.risk_level === 'HIGH' ? 0.20 : 0.12,
-          weight: snap.risk_level === 'CRITICAL' ? 2 : 1,
-          dashArray: snap.risk_level === 'CRITICAL' ? '4, 4' : undefined
+          fillOpacity: displayLevel === 'CRITICAL' ? 0.28 : displayLevel === 'MEDIUM' ? 0.18 : 0.08,
+          weight: displayLevel === 'CRITICAL' ? 2 : 1,
+          dashArray: displayLevel === 'CRITICAL' ? '4, 4' : undefined
         });
 
         // Center Village Marker Node
         const marker = L.circleMarker([v.lat, v.lon], {
-          radius: snap.risk_level === 'CRITICAL' ? 11 : 8,
+          radius: displayLevel === 'CRITICAL' ? 12 : displayLevel === 'MEDIUM' ? 10 : 8,
           fillColor: color,
           color: '#ffffff',
-          weight: 2,
+          weight: 2.5,
           opacity: 1,
           fillOpacity: 0.95
         });
 
+        // Interactive Tooltip showing name and risk level
+        marker.bindTooltip(`
+          <div style="font-family: sans-serif; font-size: 11px; font-weight: bold; color: #0f172a;">
+            ${v.name} &bull; <span style="color: ${color}; font-weight: 800;">${displayLevel}</span>
+          </div>
+        `, { direction: 'top', offset: [0, -8] });
+
         const popupContent = `
-          <div style="font-family: sans-serif; font-size: 12px; color: #0f172a; min-width: 200px;">
-            <div style="font-weight: bold; font-size: 13px; margin-bottom: 2px;">${v.name}</div>
-            <div style="display: inline-block; padding: 2px 6px; font-size: 10px; font-weight: bold; border-radius: 4px; background: ${color}20; color: ${color}; border: 1px solid ${color}60; margin-bottom: 6px;">
-              ${snap.risk_level} RISK (Score: ${snap.risk_score})
+          <div style="font-family: sans-serif; font-size: 12px; color: #0f172a; min-width: 210px; padding: 2px;">
+            <div style="font-weight: bold; font-size: 13px; margin-bottom: 3px;">${v.name}</div>
+            <div style="display: inline-block; padding: 2px 8px; font-size: 10px; font-weight: 800; border-radius: 6px; background: ${color}20; color: ${color}; border: 1.5px solid ${color}; margin-bottom: 6px; text-transform: uppercase;">
+              ${displayLevel} RISK (${(snap.risk_score * 100).toFixed(0)}%)
             </div>
-            <div style="color: #475569; line-height: 1.4;">
-              <div>🌧️ <b>Rain 24h:</b> ${snap.rainfall_24h_mm.toFixed(1)} mm</div>
-              <div>📐 <b>Slope:</b> ${v.slope_deg}° | <b>Elev:</b> ${v.elevation_m}m</div>
-              <div>💧 <b>Soil Moisture:</b> ${snap.soil_moisture_pct.toFixed(1)}%</div>
+            <div style="color: #475569; font-size: 11px; line-height: 1.5;">
+              <div>🌧️ <b>24h Rainfall:</b> ${snap.rainfall_24h_mm.toFixed(1)} mm</div>
+              <div>📐 <b>Slope Gradient:</b> ${v.slope_deg}° | <b>Elev:</b> ${v.elevation_m}m</div>
+              <div>💧 <b>Soil Saturation:</b> ${snap.soil_moisture_pct.toFixed(1)}%</div>
             </div>
-            <div style="margin-top: 8px; font-size: 10px; color: #64748b;">
-              Click marker for complete geological SOP drilldown
+            <div style="margin-top: 8px; font-size: 10px; color: #2563eb; font-weight: 600;">
+              Click to view detailed geotechnical response plan &rarr;
             </div>
           </div>
         `;
@@ -389,14 +396,6 @@ export const RiskMap: React.FC<RiskMapProps> = ({
     showSensors,
     showIncidents
   ]);
-
-  // Auto-select highest risk settlement if none selected
-  useEffect(() => {
-    if (!selectedVillage && villages.length > 0) {
-      const highestRisk = [...villages].sort((a, b) => (b.susceptibility_base_score || 0) - (a.susceptibility_base_score || 0))[0];
-      onSelectVillage(highestRisk || villages[0]);
-    }
-  }, [villages, selectedVillage, onSelectVillage]);
 
   // Fly to selected village when selected
   useEffect(() => {
@@ -543,7 +542,7 @@ export const RiskMap: React.FC<RiskMapProps> = ({
         <div className="flex items-center justify-between text-xs">
           <span className="font-bold text-slate-200 flex items-center gap-1.5">
             <Clock className="w-4 h-4 text-cyan-400" />
-            {t.timeHorizon}: <span className="text-cyan-300 uppercase tracking-wider">{selectedHorizon === 0 ? t.liveNow : `+${selectedHorizon} Hours Forecast`}</span>
+            {t.timeHorizon}: <span className="text-cyan-300 uppercase tracking-wider">{selectedHorizon === 0 ? 'Current Baseline' : `+${selectedHorizon} Hours Forecast`}</span>
           </span>
           <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
             IMD & GSI Ensemble Model
@@ -564,7 +563,7 @@ export const RiskMap: React.FC<RiskMapProps> = ({
             >
               <span>{hz === 0 ? 'NOW' : `+${hz}h`}</span>
               <span className="text-[9px] opacity-75 font-normal">
-                {hz === 0 ? 'Live Telemetry' : hz === 6 ? 'Short Alert' : hz === 24 ? 'Monsoon' : 'Trend'}
+                {hz === 0 ? 'Current State' : hz === 6 ? 'Short Alert' : hz === 24 ? 'Monsoon' : 'Trend'}
               </span>
             </button>
           ))}
@@ -572,23 +571,19 @@ export const RiskMap: React.FC<RiskMapProps> = ({
       </div>
 
       {/* Bottom Right Floating Map Legend */}
-      <div className="hidden lg:block absolute bottom-4 right-14 z-30 bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-xl p-2.5 shadow-xl text-xs space-y-1.5">
-        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Risk Class Legend</div>
-        <div className="flex items-center gap-2 text-[11px] text-slate-200">
-          <span className="w-3 h-3 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50"></span>
-          <span>Critical (&gt;0.78 score)</span>
+      <div className="hidden lg:block absolute bottom-4 right-14 z-30 bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-xl p-3 shadow-xl text-xs space-y-2">
+        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Hazard Risk Levels</div>
+        <div className="flex items-center gap-2.5 text-[11px] text-slate-200">
+          <span className="w-3.5 h-3.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50 flex-shrink-0"></span>
+          <span className="font-semibold text-rose-400">Critical Risk</span>
         </div>
-        <div className="flex items-center gap-2 text-[11px] text-slate-200">
-          <span className="w-3 h-3 rounded-full bg-orange-500"></span>
-          <span>High (0.58 - 0.78)</span>
+        <div className="flex items-center gap-2.5 text-[11px] text-slate-200">
+          <span className="w-3.5 h-3.5 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50 flex-shrink-0"></span>
+          <span className="font-semibold text-amber-400">Medium Risk</span>
         </div>
-        <div className="flex items-center gap-2 text-[11px] text-slate-200">
-          <span className="w-3 h-3 rounded-full bg-amber-500"></span>
-          <span>Moderate (0.35 - 0.58)</span>
-        </div>
-        <div className="flex items-center gap-2 text-[11px] text-slate-200">
-          <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-          <span>Low (&lt;0.35)</span>
+        <div className="flex items-center gap-2.5 text-[11px] text-slate-200">
+          <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 flex-shrink-0"></span>
+          <span className="font-semibold text-emerald-400">Low Risk</span>
         </div>
       </div>
 
