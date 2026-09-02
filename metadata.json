@@ -1,0 +1,10 @@
+{
+  "name": "BEACON",
+  "description": "BEACON — Landslide Early Warning, Assessment, Communication and Observation Network. AI-based landslide early warning, real-time rainfall & slope stability monitoring, multi-tier hazard alerts, and disaster response system for the North Eastern Region of India.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
